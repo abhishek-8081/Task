@@ -1,0 +1,11 @@
+### Autocomplete Search
+GET http://localhost:5000/api/airports/autocomplete?query=new
+Accept: application/json
+
+### Nearby Airports
+GET http://localhost:5000/api/airports/nearby?lat=40.7128&lon=-74.0060
+Accept: application/json
+
+### Seed Database (POST)
+POST http://localhost:5000/api/airports/seed
+Content-Type: application/json
