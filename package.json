@@ -1,24 +1,13 @@
 {
   "name": "airport-search-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js",
-    "seed": "node ./scripts/seed.js"
+    "seed": "node scripts/fetchIndianAirports.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "axios": "^1.9.0",
-    "express-rate-limit": "^7.5.0",
-    "module-alias": "^2.2.3",
-    "redis": "^5.5.6"
-  },
-  "_moduleAliases": {
-    "@models": "models",
-    "@scripts": "scripts"
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3"
   }
 }

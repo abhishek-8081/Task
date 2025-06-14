@@ -5,13 +5,13 @@ const AirportSchema = new Schema({
   icao: { type: String, unique: true },
   iata: { type: String, unique: true },
   name: { type: String, required: true },
-  city: { type: String, required: false },
+  city: { type: String, required: true },
   country: { type: String, required: true },
   location: {
     type: {
       type: String,
-      enum: ['Point'],
-      required: true
+      default: "Point",
+      enum: ['Point']
     },
     coordinates: {
       type: [Number], // [longitude, latitude]
@@ -20,8 +20,7 @@ const AirportSchema = new Schema({
   }
 });
 
-// Create indexes
+// Create geospatial index (critical for nearby searches)
 AirportSchema.index({ location: '2dsphere' });
-AirportSchema.index({ name: 'text', city: 'text', country: 'text' });
 
 module.exports = mongoose.model('Airport', AirportSchema);

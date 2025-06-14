@@ -2,24 +2,78 @@ exports.autocomplete = async (req, res) => {
   try {
     const { query } = req.query;
     
-    if (!query || query.length < 2) {
-      return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    if (!query || query.trim().length < 2) {
+      return res.status(400).json({ 
+        error: 'Minimum 2 characters required',
+        example: 'Try: /api/airports/search?query=del'
+      });
     }
 
-    // Flexible search across multiple fields
-    const results = await Airport.find({
-      $or: [
-        { city: { $regex: query, $options: 'i' } }, // Case-insensitive city search
-        { iata: { $regex: `^${query}$`, $options: 'i' } }, // Exact IATA code match
-        { name: { $regex: query, $options: 'i' } } // Airport name search
-      ]
-    })
-    .limit(10)
-    .select('_id name city country iata icao location'); // Only return essential fields
+    const searchQuery = query.trim().toLowerCase();
 
-    res.json(results);
+    const results = await Airport.aggregate([
+      {
+        $match: {
+          $or: [
+            { city: { $regex: searchQuery, $options: 'i' } },
+            { iata: { $regex: `^${searchQuery}$`, $options: 'i' } },
+            { name: { $regex: searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), $options: 'i' } }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          matchType: {
+            $cond: [
+              { $regexMatch: { input: "$iata", regex: `^${searchQuery}$`, options: "i" } },
+              "iata",
+              {
+                $cond: [
+                  { $regexMatch: { input: "$city", regex: searchQuery, options: "i" } },
+                  "city",
+                  "name"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      { $sort: { matchType: 1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          city: 1,
+          country: 1,
+          iata: 1,
+          icao: 1,
+          matchType: 1
+        }
+      }
+    ]);
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: 'No airports found',
+        suggestions: [
+          'Check your spelling',
+          'Try: DEL, Mumbai, or Indira Gandhi'
+        ]
+      });
+    }
+
+    res.json({
+      count: results.length,
+      query: searchQuery,
+      results
+    });
+
   } catch (err) {
-    console.error('Search error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error(err);
+    res.status(500).json({ 
+      error: 'Server error',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
